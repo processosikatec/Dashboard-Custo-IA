@@ -23,7 +23,10 @@ export function FluxoBreakdown({ stats }: { stats: FluxoStat[] }) {
 
       <div className="flex flex-col gap-4">
         {stats.map((s) => (
-          <div key={s.fluxo} title={`${fmtInt.format(s.tokens)} tokens · ${s.count} execuções`}>
+          <div
+            key={s.fluxo}
+            title={`${fmtInt.format(s.tokens)} tokens · ${s.count} execuções · ${fmtBRL.format(s.custo / (s.count || 1))} por execução`}
+          >
             <div className="flex items-baseline justify-between gap-3 mb-1.5">
               <div className="flex items-center gap-2 min-w-0">
                 <span
@@ -35,6 +38,9 @@ export function FluxoBreakdown({ stats }: { stats: FluxoStat[] }) {
                   style={{ color: C.inkPrimary }}
                 >
                   {s.fluxo}
+                </span>
+                <span className="text-[12px] shrink-0" style={{ color: C.inkMuted }}>
+                  {fmtBRL.format(s.custo / (s.count || 1))}/exec.
                 </span>
               </div>
               <div className="flex items-baseline gap-3 shrink-0 text-[13px]">
