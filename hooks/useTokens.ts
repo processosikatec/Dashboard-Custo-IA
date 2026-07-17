@@ -155,30 +155,12 @@ export function useTokens() {
   useEffect(() => {
     fetchTokens();
 
-    // Realtime via postgres_changes depende de replicação habilitada no Supabase e
-    // pode ficar em silêncio sem erro visível. Polling a cada 30s garante atualização
-    // mesmo se o canal não entregar eventos; a subscription abaixo só acelera quando funciona.
-    const interval = setInterval(fetchTokens, 30_000);
-
-    const channel = supabase
-      .channel('tokens-realtime')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: TABLE_NAME },
-        (payload) => {
-          setAllRecords((prev) => [normalize(payload.new as Record<string, unknown>), ...prev]);
-          setLastUpdate(new Date());
-        },
-      )
-      .subscribe((status) => {
-        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.warn('Supabase realtime indisponível, mantendo polling a cada 30s.');
-        }
-      });
+    // Atualização por polling a cada 1min — comportamento previsível, sem depender
+    // de replicação realtime do Supabase (não confirmada como confiável nesta tabela).
+    const interval = setInterval(fetchTokens, 60_000);
 
     return () => {
       clearInterval(interval);
-      channel.unsubscribe();
     };
   }, [fetchTokens]);
 
