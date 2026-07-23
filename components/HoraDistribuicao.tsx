@@ -1,21 +1,17 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell } from 'recharts';
 import { C } from '@/lib/palette';
 import { fmtCompact, fmtInt } from '@/lib/format';
-import { DateRange, HoraCompareMode, HoraPoint } from '@/lib/types';
+import { DateRange, HoraPoint } from '@/lib/types';
+import { CompareControls, CompareMode } from './CompareControls';
 
 interface HoraDistribuicaoProps {
   data: HoraPoint[];
-  compareMode: HoraCompareMode;
-  onCompareMode: (m: HoraCompareMode) => void;
+  compareMode: CompareMode;
+  onCompareMode: (m: CompareMode) => void;
   compareRange: DateRange | null;
   onCompareRange: (r: DateRange) => void;
-}
-
-function toInputDate(d: Date): string {
-  return d.toISOString().slice(0, 10);
 }
 
 function Tip({
@@ -45,61 +41,6 @@ function Tip({
   );
 }
 
-function CompareRangePicker({
-  compareRange,
-  onCompareRange,
-  onApplied,
-}: {
-  compareRange: DateRange | null;
-  onCompareRange: (r: DateRange) => void;
-  onApplied: () => void;
-}) {
-  const today = toInputDate(new Date());
-  const [start, setStart] = useState(compareRange ? toInputDate(compareRange.start) : today);
-  const [end, setEnd] = useState(compareRange ? toInputDate(compareRange.end) : today);
-
-  return (
-    <div
-      className="absolute z-20 mt-1.5 right-0 rounded-lg border shadow-xl p-3 flex flex-col gap-2"
-      style={{ background: C.surface, borderColor: C.border }}
-    >
-      <label className="flex items-center justify-between gap-3 text-[13px]" style={{ color: C.inkSecondary }}>
-        Início
-        <input
-          type="date"
-          value={start}
-          max={end}
-          onChange={(e) => setStart(e.target.value)}
-          className="rounded px-2 py-1 text-[13px]"
-          style={{ background: 'rgba(255,255,255,0.06)', color: C.inkPrimary, border: `1px solid ${C.border}` }}
-        />
-      </label>
-      <label className="flex items-center justify-between gap-3 text-[13px]" style={{ color: C.inkSecondary }}>
-        Fim
-        <input
-          type="date"
-          value={end}
-          min={start}
-          max={today}
-          onChange={(e) => setEnd(e.target.value)}
-          className="rounded px-2 py-1 text-[13px]"
-          style={{ background: 'rgba(255,255,255,0.06)', color: C.inkPrimary, border: `1px solid ${C.border}` }}
-        />
-      </label>
-      <button
-        onClick={() => {
-          onCompareRange({ start: new Date(`${start}T00:00:00`), end: new Date(`${end}T23:59:59.999`) });
-          onApplied();
-        }}
-        className="mt-1 px-3 py-1.5 rounded-lg text-[13px] font-medium"
-        style={{ background: C.accent, color: '#fff' }}
-      >
-        Aplicar
-      </button>
-    </div>
-  );
-}
-
 export function HoraDistribuicao({
   data,
   compareMode,
@@ -107,17 +48,6 @@ export function HoraDistribuicao({
   compareRange,
   onCompareRange,
 }: HoraDistribuicaoProps) {
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function onClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setPickerOpen(false);
-    }
-    document.addEventListener('mousedown', onClick);
-    return () => document.removeEventListener('mousedown', onClick);
-  }, []);
-
   const hasComparacao = compareMode !== 'off';
   const max = Math.max(...data.map((d) => Math.max(d.tokens, d.tokensComparacao || 0)), 1);
   const picoHora = data.reduce((a, b) => (b.tokens > a.tokens ? b : a), data[0]);
@@ -128,46 +58,7 @@ export function HoraDistribuicao({
         <h3 className="text-[15px] font-semibold" style={{ color: C.inkPrimary }}>
           Consumo por horário do dia
         </h3>
-
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => onCompareMode(compareMode === 'ontem' ? 'off' : 'ontem')}
-            className="px-2.5 py-1 rounded-md text-[12px] font-medium transition-colors"
-            style={
-              compareMode === 'ontem'
-                ? { background: 'rgba(255,255,255,0.12)', color: C.inkPrimary }
-                : { color: C.inkMuted }
-            }
-          >
-            Comparar com ontem
-          </button>
-
-          <div className="relative" ref={ref}>
-            <button
-              onClick={() => setPickerOpen((v) => !v)}
-              className="px-2.5 py-1 rounded-md text-[12px] font-medium transition-colors"
-              style={
-                compareMode === 'custom'
-                  ? { background: 'rgba(255,255,255,0.12)', color: C.inkPrimary }
-                  : { color: C.inkMuted }
-              }
-            >
-              {compareMode === 'custom' && compareRange
-                ? `${compareRange.start.toLocaleDateString('pt-BR')} – ${compareRange.end.toLocaleDateString('pt-BR')}`
-                : 'Personalizado'}
-            </button>
-            {pickerOpen && (
-              <CompareRangePicker
-                compareRange={compareRange}
-                onCompareRange={onCompareRange}
-                onApplied={() => {
-                  onCompareMode('custom');
-                  setPickerOpen(false);
-                }}
-              />
-            )}
-          </div>
-        </div>
+        <CompareControls mode={compareMode} onMode={onCompareMode} range={compareRange} onRange={onCompareRange} />
       </div>
 
       <p className="text-[12px] mb-4" style={{ color: C.inkMuted }}>

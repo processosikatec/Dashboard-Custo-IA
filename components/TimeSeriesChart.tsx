@@ -13,14 +13,18 @@ import {
 } from 'recharts';
 import { C } from '@/lib/palette';
 import { fmtCompact, fmtInt, fmtBRL } from '@/lib/format';
-import { SeriesPoint, Metric } from '@/lib/types';
+import { SeriesPoint, Metric, DateRange } from '@/lib/types';
+import { CompareControls, CompareMode } from './CompareControls';
 
 interface TimeSeriesChartProps {
   data: SeriesPoint[];
   title: string;
   fluxos: string[];
   colorMap: Map<string, string>;
-  compareEnabled: boolean;
+  compareMode: CompareMode;
+  onCompareMode: (m: CompareMode) => void;
+  compareRange: DateRange | null;
+  onCompareRange: (r: DateRange) => void;
 }
 
 function fmtValue(v: number, metric: Metric) {
@@ -80,8 +84,18 @@ function ChartTooltip({
   );
 }
 
-export function TimeSeriesChart({ data, title, fluxos, colorMap, compareEnabled }: TimeSeriesChartProps) {
+export function TimeSeriesChart({
+  data,
+  title,
+  fluxos,
+  colorMap,
+  compareMode,
+  onCompareMode,
+  compareRange,
+  onCompareRange,
+}: TimeSeriesChartProps) {
   const [metric, setMetric] = useState<Metric>('tokens');
+  const compareEnabled = compareMode !== 'off';
 
   // Expande cada ponto com uma chave por fluxo (em tokens ou em custo real) + o total do período anterior.
   const chartData = useMemo(() => {
@@ -109,21 +123,29 @@ export function TimeSeriesChart({ data, title, fluxos, colorMap, compareEnabled 
         <h3 className="text-[15px] font-semibold" style={{ color: C.inkPrimary }}>
           {title}
         </h3>
-        <div className="flex items-center gap-1 rounded-lg p-0.5" style={{ background: 'rgba(255,255,255,0.06)' }}>
-          {(['tokens', 'custo'] as Metric[]).map((m) => (
-            <button
-              key={m}
-              onClick={() => setMetric(m)}
-              className="px-2.5 py-1 rounded-md text-[12px] font-medium transition-colors"
-              style={
-                metric === m
-                  ? { background: 'rgba(255,255,255,0.12)', color: C.inkPrimary }
-                  : { color: C.inkMuted }
-              }
-            >
-              {m === 'tokens' ? 'Tokens' : 'Custo (R$)'}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2">
+          <CompareControls
+            mode={compareMode}
+            onMode={onCompareMode}
+            range={compareRange}
+            onRange={onCompareRange}
+          />
+          <div className="flex items-center gap-1 rounded-lg p-0.5" style={{ background: 'rgba(255,255,255,0.06)' }}>
+            {(['tokens', 'custo'] as Metric[]).map((m) => (
+              <button
+                key={m}
+                onClick={() => setMetric(m)}
+                className="px-2.5 py-1 rounded-md text-[12px] font-medium transition-colors"
+                style={
+                  metric === m
+                    ? { background: 'rgba(255,255,255,0.12)', color: C.inkPrimary }
+                    : { color: C.inkMuted }
+                }
+              >
+                {m === 'tokens' ? 'Tokens' : 'Custo (R$)'}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

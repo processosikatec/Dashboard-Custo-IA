@@ -10,6 +10,7 @@ import {
 } from '@/lib/config';
 import { SERIES_COLORS, C } from '@/lib/palette';
 import { TokenRecord, FluxoStat, SeriesPoint, Period, DateRange } from '@/lib/types';
+import { CompareMode } from '@/components/CompareControls';
 
 const OUTROS = 'Outros';
 
@@ -119,10 +120,13 @@ export function useTokens() {
   const [period, setPeriod] = useState<Period>('hoje');
   const [customRange, setCustomRange] = useState<DateRange | null>(null);
   const [selectedFluxos, setSelectedFluxos] = useState<Set<string> | null>(null); // null = todos
-  const [compareEnabled, setCompareEnabled] = useState(false);
+
+  // Comparação independente para o gráfico de tendência (multi-linha por fluxo).
+  const [seriesCompareMode, setSeriesCompareMode] = useState<CompareMode>('off');
+  const [seriesCompareRange, setSeriesCompareRange] = useState<DateRange | null>(null);
 
   // Comparação independente para o gráfico de distribuição por horário do dia.
-  const [horaCompareMode, setHoraCompareMode] = useState<'off' | 'ontem' | 'custom'>('off');
+  const [horaCompareMode, setHoraCompareMode] = useState<CompareMode>('off');
   const [horaCompareRange, setHoraCompareRange] = useState<DateRange | null>(null);
 
   const fetchTokens = useCallback(async () => {
@@ -278,8 +282,20 @@ export function useTokens() {
     };
   }, [records, byFluxo, range, fluxoStats]);
 
+  // Intervalo de comparação para o gráfico de tendência: "ontem" (mesmo intervalo de
+  // horas do dia anterior) ou um período customizado escolhido pelo usuário.
+  const seriesCompareRangeResolved = useMemo((): DateRange | null => {
+    if (seriesCompareMode === 'ontem') {
+      const durationMs = range.end.getTime() - range.start.getTime();
+      const start = new Date(range.start.getTime() - 86_400_000);
+      return { start, end: new Date(start.getTime() + durationMs) };
+    }
+    if (seriesCompareMode === 'custom' && seriesCompareRange) return seriesCompareRange;
+    return null;
+  }, [seriesCompareMode, seriesCompareRange, range]);
+
   // Série temporal: um ponto por bucket, com breakdown por fluxo e, se ativado,
-  // o valor do mesmo ponto no período anterior (overlay comparativo).
+  // o valor do mesmo ponto no intervalo de comparação (overlay).
   const series: SeriesPoint[] = useMemo(() => {
     const buckets = buildBuckets(range);
     const granularity = granularityFor(range);
@@ -307,17 +323,16 @@ export function useTokens() {
       points[i].fluxosCusto[fluxoKey] = (points[i].fluxosCusto[fluxoKey] || 0) + c;
     });
 
-    if (compareEnabled) {
-      const prevRange = previousRange(range);
-      const prevGranularity = granularityFor(prevRange);
-      const prevBuckets = buildBuckets(prevRange);
+    if (seriesCompareRangeResolved) {
+      const prevGranularity = granularityFor(seriesCompareRangeResolved);
+      const prevBuckets = buildBuckets(seriesCompareRangeResolved);
       const prevTokenTotals = new Array(prevBuckets.length).fill(0);
       const prevCustoTotals = new Array(prevBuckets.length).fill(0);
       const prevIdx = new Map(prevBuckets.map((b, i) => [b.key, i]));
 
       byFluxo.forEach((r) => {
         const t = +new Date(r.created_at);
-        if (t < prevRange.start.getTime() || t > prevRange.end.getTime()) return;
+        if (t < seriesCompareRangeResolved.start.getTime() || t > seriesCompareRangeResolved.end.getTime()) return;
         const key = bucketKeyFor(new Date(r.created_at), prevGranularity);
         const i = prevIdx.get(key);
         if (i !== undefined) {
@@ -335,7 +350,7 @@ export function useTokens() {
     }
 
     return points;
-  }, [records, range, compareEnabled, byFluxo, displayFluxo]);
+  }, [records, range, seriesCompareRangeResolved, byFluxo, displayFluxo]);
 
   // Sparkline: total por hora nas últimas 12 horas (sobre os fluxos selecionados).
   const sparkline = useMemo(() => {
@@ -428,6 +443,10 @@ export function useTokens() {
     setHoraCompareMode,
     horaCompareRange,
     setHoraCompareRange,
+    seriesCompareMode,
+    setSeriesCompareMode,
+    seriesCompareRange,
+    setSeriesCompareRange,
     projecaoMensal,
     colorMap,
     loading,
@@ -441,8 +460,6 @@ export function useTokens() {
     setCustomRange,
     selectedFluxos,
     setSelectedFluxos,
-    compareEnabled,
-    setCompareEnabled,
     range,
   };
 }

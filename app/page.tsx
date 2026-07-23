@@ -55,6 +55,10 @@ export default function Dashboard() {
     setHoraCompareMode,
     horaCompareRange,
     setHoraCompareRange,
+    seriesCompareMode,
+    setSeriesCompareMode,
+    seriesCompareRange,
+    setSeriesCompareRange,
     projecaoMensal,
     colorMap,
     loading,
@@ -68,8 +72,6 @@ export default function Dashboard() {
     setCustomRange,
     selectedFluxos,
     setSelectedFluxos,
-    compareEnabled,
-    setCompareEnabled,
     range,
   } = useTokens();
 
@@ -132,8 +134,6 @@ export default function Dashboard() {
             onPeriod={setPeriod}
             customRange={customRange}
             onCustomRange={setCustomRange}
-            compareEnabled={compareEnabled}
-            onCompareToggle={setCompareEnabled}
           />
           <FiltroFluxo
             fluxos={allFluxos}
@@ -202,7 +202,10 @@ export default function Dashboard() {
             title={chartTitle}
             fluxos={activeFluxos}
             colorMap={colorMap}
-            compareEnabled={compareEnabled}
+            compareMode={seriesCompareMode}
+            onCompareMode={setSeriesCompareMode}
+            compareRange={seriesCompareRange}
+            onCompareRange={setSeriesCompareRange}
           />
 
           {/* Distribuição por horário + execuções mais caras */}

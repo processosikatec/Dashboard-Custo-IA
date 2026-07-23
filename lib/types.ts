@@ -46,5 +46,3 @@ export interface HoraPoint {
   /** total do intervalo de comparação para essa mesma hora, quando ativo */
   tokensComparacao?: number;
 }
-
-export type HoraCompareMode = 'off' | 'ontem' | 'custom';

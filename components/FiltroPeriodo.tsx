@@ -20,8 +20,6 @@ interface FiltroPeriodoProps {
   onPeriod: (p: Period) => void;
   customRange: DateRange | null;
   onCustomRange: (r: DateRange) => void;
-  compareEnabled: boolean;
-  onCompareToggle: (v: boolean) => void;
 }
 
 export function FiltroPeriodo({
@@ -29,8 +27,6 @@ export function FiltroPeriodo({
   onPeriod,
   customRange,
   onCustomRange,
-  compareEnabled,
-  onCompareToggle,
 }: FiltroPeriodoProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -126,24 +122,6 @@ export function FiltroPeriodo({
           )}
         </div>
       </div>
-
-      <div className="w-px h-5 mx-1" style={{ background: C.border }} />
-
-      <button
-        onClick={() => onCompareToggle(!compareEnabled)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[13px] font-medium border transition-colors"
-        style={{
-          borderColor: C.border,
-          color: compareEnabled ? C.inkPrimary : C.inkMuted,
-          background: compareEnabled ? 'rgba(255,255,255,0.06)' : 'transparent',
-        }}
-      >
-        <span
-          className="w-2 h-2 rounded-full shrink-0"
-          style={{ background: compareEnabled ? C.accent : C.inkMuted }}
-        />
-        Comparar com período anterior
-      </button>
     </div>
   );
 }
