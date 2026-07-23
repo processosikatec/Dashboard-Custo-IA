@@ -121,6 +121,10 @@ export function useTokens() {
   const [selectedFluxos, setSelectedFluxos] = useState<Set<string> | null>(null); // null = todos
   const [compareEnabled, setCompareEnabled] = useState(false);
 
+  // Comparação independente para o gráfico de distribuição por horário do dia.
+  const [horaCompareMode, setHoraCompareMode] = useState<'off' | 'ontem' | 'custom'>('off');
+  const [horaCompareRange, setHoraCompareRange] = useState<DateRange | null>(null);
+
   const fetchTokens = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -355,15 +359,42 @@ export function useTokens() {
     [records],
   );
 
+  // Intervalo de comparação para a distribuição por hora: "ontem" (dia anterior a hoje)
+  // ou um período customizado escolhido pelo usuário.
+  const horaCompareRangeResolved = useMemo((): DateRange | null => {
+    if (horaCompareMode === 'ontem') {
+      const hojeStart = startOfDay(new Date());
+      const ontemStart = new Date(hojeStart);
+      ontemStart.setDate(ontemStart.getDate() - 1);
+      return { start: ontemStart, end: new Date(hojeStart.getTime() - 1) };
+    }
+    if (horaCompareMode === 'custom' && horaCompareRange) return horaCompareRange;
+    return null;
+  }, [horaCompareMode, horaCompareRange]);
+
   // Distribuição de tokens por hora do dia (0–23h), somando todos os dias do período —
   // mostra em que horários o gasto se concentra, independente de quantos dias o filtro cobre.
+  // Quando há comparação ativa, cada hora também traz o total do intervalo de comparação.
   const horaDistribuicao = useMemo(() => {
     const buckets = new Array(24).fill(0);
     records.forEach((r) => {
       buckets[new Date(r.created_at).getHours()] += r.tokens;
     });
-    return buckets.map((tokens, hora) => ({ hora, tokens }));
-  }, [records]);
+
+    if (!horaCompareRangeResolved) {
+      return buckets.map((tokens, hora) => ({ hora, tokens }));
+    }
+
+    const compareBuckets = new Array(24).fill(0);
+    byFluxo.forEach((r) => {
+      const t = +new Date(r.created_at);
+      if (t >= horaCompareRangeResolved.start.getTime() && t <= horaCompareRangeResolved.end.getTime()) {
+        compareBuckets[new Date(r.created_at).getHours()] += r.tokens;
+      }
+    });
+
+    return buckets.map((tokens, hora) => ({ hora, tokens, tokensComparacao: compareBuckets[hora] }));
+  }, [records, byFluxo, horaCompareRangeResolved]);
 
   // Projeção de gasto do mês corrente com base no ritmo médio diário observado.
   const projecaoMensal = useMemo(() => {
@@ -393,6 +424,10 @@ export function useTokens() {
     sparkline,
     topExecucoes,
     horaDistribuicao,
+    horaCompareMode,
+    setHoraCompareMode,
+    horaCompareRange,
+    setHoraCompareRange,
     projecaoMensal,
     colorMap,
     loading,

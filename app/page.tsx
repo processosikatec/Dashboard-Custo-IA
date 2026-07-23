@@ -51,6 +51,10 @@ export default function Dashboard() {
     sparkline,
     topExecucoes,
     horaDistribuicao,
+    horaCompareMode,
+    setHoraCompareMode,
+    horaCompareRange,
+    setHoraCompareRange,
     projecaoMensal,
     colorMap,
     loading,
@@ -204,7 +208,13 @@ export default function Dashboard() {
           {/* Distribuição por horário + execuções mais caras */}
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
             <div className="lg:col-span-3">
-              <HoraDistribuicao data={horaDistribuicao} />
+              <HoraDistribuicao
+                data={horaDistribuicao}
+                compareMode={horaCompareMode}
+                onCompareMode={setHoraCompareMode}
+                compareRange={horaCompareRange}
+                onCompareRange={setHoraCompareRange}
+              />
             </div>
             <div className="lg:col-span-2">
               <TopExecucoes execucoes={topExecucoes} colorMap={colorMap} />

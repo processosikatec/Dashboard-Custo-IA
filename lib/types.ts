@@ -39,3 +39,12 @@ export interface DateRange {
 }
 
 export type Metric = 'tokens' | 'custo';
+
+export interface HoraPoint {
+  hora: number;
+  tokens: number;
+  /** total do intervalo de comparação para essa mesma hora, quando ativo */
+  tokensComparacao?: number;
+}
+
+export type HoraCompareMode = 'off' | 'ontem' | 'custom';
