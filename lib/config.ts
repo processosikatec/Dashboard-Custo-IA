@@ -3,6 +3,9 @@
 // Base: GPT-4.1 mini.
 export const INPUT_POR_MILHAO_USD = 0.4;
 export const OUTPUT_POR_MILHAO_USD = 1.6;
+// Prompt cache hit: 75% de desconto sobre o input (preço da OpenAI para
+// "cached_tokens" retornado em usage.prompt_tokens_details).
+export const CACHED_INPUT_POR_MILHAO_USD = 0.1;
 
 // Fallback quando só existe "total tokens" (linhas antigas, sem separação).
 // Blended a partir do mix assumido 75% input / 25% output.

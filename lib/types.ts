@@ -5,6 +5,8 @@ export interface TokenRecord {
   /** presentes só quando o registro veio com colunas separadas; usados para custo exato */
   inputTokens: number | null;
   outputTokens: number | null;
+  /** subconjunto de inputTokens servido via prompt cache (25% do preço normal) */
+  cachedTokens: number | null;
   fluxo: string;
 }
 

@@ -7,6 +7,7 @@ import {
   CUSTO_POR_MILHAO_USD,
   INPUT_POR_MILHAO_USD,
   OUTPUT_POR_MILHAO_USD,
+  CACHED_INPUT_POR_MILHAO_USD,
 } from '@/lib/config';
 import { SERIES_COLORS, C } from '@/lib/palette';
 import { TokenRecord, FluxoStat, SeriesPoint, Period, DateRange } from '@/lib/types';
@@ -17,21 +18,30 @@ const OUTROS = 'Outros';
 function normalize(row: Record<string, unknown>): TokenRecord {
   const input = row['input tokens'];
   const output = row['output tokens'];
+  const cached = row['cached tokens'];
   return {
     id: Number(row.id),
     created_at: String(row.created_at ?? ''),
     tokens: Number(row['total tokens']) || 0,
     inputTokens: input === null || input === undefined ? null : Number(input),
     outputTokens: output === null || output === undefined ? null : Number(output),
+    cachedTokens: cached === null || cached === undefined ? null : Number(cached),
     fluxo: String(row.fluxo ?? 'Desconhecido'),
   };
 }
 
-/** Custo exato quando input/output existem; senão estimativa blended sobre o total. */
+/**
+ * Custo exato quando input/output existem, descontando cache hit quando registrado
+ * (cachedTokens é cobrado a 25% do preço normal de input); senão estimativa blended
+ * sobre o total.
+ */
 function custoDe(r: TokenRecord): number {
   if (r.inputTokens !== null && r.outputTokens !== null) {
+    const cached = r.cachedTokens ?? 0;
+    const inputNormal = Math.max(r.inputTokens - cached, 0);
     return (
-      (r.inputTokens / 1_000_000) * INPUT_POR_MILHAO_USD +
+      (inputNormal / 1_000_000) * INPUT_POR_MILHAO_USD +
+      (cached / 1_000_000) * CACHED_INPUT_POR_MILHAO_USD +
       (r.outputTokens / 1_000_000) * OUTPUT_POR_MILHAO_USD
     );
   }
