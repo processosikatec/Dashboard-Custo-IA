@@ -1,7 +1,7 @@
 'use client';
 
 import { C } from '@/lib/palette';
-import { fmtInt, fmtBRL, tempoRelativo } from '@/lib/format';
+import { fmtInt, fmtUSD, tempoRelativo } from '@/lib/format';
 import { TokenRecord } from '@/lib/types';
 
 interface TopExecucoesProps {
@@ -44,7 +44,7 @@ export function TopExecucoes({ execucoes, colorMap }: TopExecucoesProps) {
                   {e.fluxo}
                 </span>
                 <span className="text-[13px] font-semibold shrink-0 tabular-nums" style={{ color: C.inkPrimary }}>
-                  {fmtBRL.format(e.custo)}
+                  {fmtUSD.format(e.custo)}
                 </span>
               </div>
               <div className="h-1 rounded-full mt-1 overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>

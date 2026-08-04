@@ -1,7 +1,7 @@
 'use client';
 
 import { C } from '@/lib/palette';
-import { fmtCompact, fmtInt, fmtBRL } from '@/lib/format';
+import { fmtCompact, fmtInt, fmtUSD } from '@/lib/format';
 import { FluxoStat } from '@/lib/types';
 
 export function FluxoBreakdown({ stats }: { stats: FluxoStat[] }) {
@@ -25,7 +25,7 @@ export function FluxoBreakdown({ stats }: { stats: FluxoStat[] }) {
         {stats.map((s) => (
           <div
             key={s.fluxo}
-            title={`${fmtInt.format(s.tokens)} tokens · ${s.count} execuções · ${fmtBRL.format(s.custo / (s.count || 1))} por execução`}
+            title={`${fmtInt.format(s.tokens)} tokens · ${s.count} execuções · ${fmtUSD.format(s.custo / (s.count || 1))} por execução`}
           >
             <div className="flex items-baseline justify-between gap-3 mb-1.5">
               <div className="flex items-center gap-2 min-w-0">
@@ -40,7 +40,7 @@ export function FluxoBreakdown({ stats }: { stats: FluxoStat[] }) {
                   {s.fluxo}
                 </span>
                 <span className="text-[12px] shrink-0" style={{ color: C.inkMuted }}>
-                  {fmtBRL.format(s.custo / (s.count || 1))}/exec.
+                  {fmtUSD.format(s.custo / (s.count || 1))}/exec.
                 </span>
               </div>
               <div className="flex items-baseline gap-3 shrink-0 text-[13px]">
@@ -48,7 +48,7 @@ export function FluxoBreakdown({ stats }: { stats: FluxoStat[] }) {
                   {fmtCompact.format(s.tokens)} tokens
                 </span>
                 <span className="font-semibold" style={{ color: C.inkPrimary }}>
-                  {fmtBRL.format(s.custo)}
+                  {fmtUSD.format(s.custo)}
                 </span>
                 <span className="w-10 text-right" style={{ color: C.inkMuted }}>
                   {s.percentage.toFixed(0)}%

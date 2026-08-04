@@ -4,9 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
   TABLE_NAME,
-  CUSTO_POR_MILHAO_BRL,
-  INPUT_POR_MILHAO_BRL,
-  OUTPUT_POR_MILHAO_BRL,
+  CUSTO_POR_MILHAO_USD,
+  INPUT_POR_MILHAO_USD,
+  OUTPUT_POR_MILHAO_USD,
 } from '@/lib/config';
 import { SERIES_COLORS, C } from '@/lib/palette';
 import { TokenRecord, FluxoStat, SeriesPoint, Period, DateRange } from '@/lib/types';
@@ -31,11 +31,11 @@ function normalize(row: Record<string, unknown>): TokenRecord {
 function custoDe(r: TokenRecord): number {
   if (r.inputTokens !== null && r.outputTokens !== null) {
     return (
-      (r.inputTokens / 1_000_000) * INPUT_POR_MILHAO_BRL +
-      (r.outputTokens / 1_000_000) * OUTPUT_POR_MILHAO_BRL
+      (r.inputTokens / 1_000_000) * INPUT_POR_MILHAO_USD +
+      (r.outputTokens / 1_000_000) * OUTPUT_POR_MILHAO_USD
     );
   }
-  return (r.tokens / 1_000_000) * CUSTO_POR_MILHAO_BRL;
+  return (r.tokens / 1_000_000) * CUSTO_POR_MILHAO_USD;
 }
 
 function somaCusto(records: TokenRecord[]): number {

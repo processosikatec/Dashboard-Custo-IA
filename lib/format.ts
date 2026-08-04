@@ -5,14 +5,14 @@ export const fmtCompact = new Intl.NumberFormat('pt-BR', {
   maximumFractionDigits: 1,
 });
 
-export const fmtBRL = new Intl.NumberFormat('pt-BR', {
+export const fmtUSD = new Intl.NumberFormat('en-US', {
   style: 'currency',
-  currency: 'BRL',
+  currency: 'USD',
 });
 
-export const fmtBRLCompact = new Intl.NumberFormat('pt-BR', {
+export const fmtUSDCompact = new Intl.NumberFormat('en-US', {
   style: 'currency',
-  currency: 'BRL',
+  currency: 'USD',
   notation: 'compact',
   maximumFractionDigits: 1,
 });

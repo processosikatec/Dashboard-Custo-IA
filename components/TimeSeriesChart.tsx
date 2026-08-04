@@ -12,7 +12,7 @@ import {
   Legend,
 } from 'recharts';
 import { C } from '@/lib/palette';
-import { fmtCompact, fmtInt, fmtBRL } from '@/lib/format';
+import { fmtCompact, fmtInt, fmtUSD } from '@/lib/format';
 import { SeriesPoint, Metric, DateRange } from '@/lib/types';
 import { CompareControls, CompareMode } from './CompareControls';
 
@@ -28,7 +28,7 @@ interface TimeSeriesChartProps {
 }
 
 function fmtValue(v: number, metric: Metric) {
-  return metric === 'custo' ? fmtBRL.format(v) : `${fmtInt.format(v)} tokens`;
+  return metric === 'custo' ? fmtUSD.format(v) : `${fmtInt.format(v)} tokens`;
 }
 
 function ChartTooltip({
@@ -142,7 +142,7 @@ export function TimeSeriesChart({
                     : { color: C.inkMuted }
                 }
               >
-                {m === 'tokens' ? 'Tokens' : 'Custo (R$)'}
+                {m === 'tokens' ? 'Tokens' : 'Custo (US$)'}
               </button>
             ))}
           </div>
@@ -163,7 +163,7 @@ export function TimeSeriesChart({
           <YAxis
             tick={{ fill: C.inkMuted, fontSize: 12 }}
             tickFormatter={(v: number) =>
-              v === 0 ? '0' : metric === 'custo' ? fmtBRL.format(v) : fmtCompact.format(v)
+              v === 0 ? '0' : metric === 'custo' ? fmtUSD.format(v) : fmtCompact.format(v)
             }
             axisLine={false}
             tickLine={false}

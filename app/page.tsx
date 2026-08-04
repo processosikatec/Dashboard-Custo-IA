@@ -10,8 +10,8 @@ import { HoraDistribuicao } from '@/components/HoraDistribuicao';
 import { FiltroFluxo } from '@/components/FiltroFluxo';
 import { FiltroPeriodo } from '@/components/FiltroPeriodo';
 import { C } from '@/lib/palette';
-import { fmtCompact, fmtInt, fmtBRL } from '@/lib/format';
-import { CUSTO_POR_MILHAO_BRL } from '@/lib/config';
+import { fmtCompact, fmtInt, fmtUSD } from '@/lib/format';
+import { CUSTO_POR_MILHAO_USD } from '@/lib/config';
 
 const PERIOD_LABELS: Record<string, string> = {
   hoje: 'hoje',
@@ -148,7 +148,7 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
               label={`Gasto ${kpis.precisaoExata > 0.99 ? '' : 'estimado '}(${periodLabel})`}
-              value={fmtBRL.format(kpis.custo)}
+              value={fmtUSD.format(kpis.custo)}
               delta={
                 kpis.periodoDeltaPct !== null
                   ? { pct: kpis.periodoDeltaPct, vs: 'vs. período anterior', upIsGood: false }
@@ -161,7 +161,7 @@ export default function Dashboard() {
                     ? 'preço exato (input/output)'
                     : kpis.precisaoExata > 0
                       ? `${Math.round(kpis.precisaoExata * 100)}% exato, resto estimado`
-                      : `${fmtBRL.format(CUSTO_POR_MILHAO_BRL)} por 1M tokens (estimado)`
+                      : `${fmtUSD.format(CUSTO_POR_MILHAO_USD)} por 1M tokens (estimado)`
               }
             />
             <StatCard
@@ -181,8 +181,8 @@ export default function Dashboard() {
             />
             <StatCard
               label="Projeção do mês"
-              value={fmtBRL.format(projecaoMensal.custoProjetado)}
-              sub={`${fmtBRL.format(projecaoMensal.custoAteAgora)} já gasto · dia ${projecaoMensal.diaAtual}/${projecaoMensal.diasNoMes}`}
+              value={fmtUSD.format(projecaoMensal.custoProjetado)}
+              sub={`${fmtUSD.format(projecaoMensal.custoAteAgora)} já gasto · dia ${projecaoMensal.diaAtual}/${projecaoMensal.diasNoMes}`}
             />
           </div>
 
@@ -227,9 +227,9 @@ export default function Dashboard() {
 
         <footer className="pb-4">
           <p className="text-[12px]" style={{ color: C.inkMuted }}>
-            Modelo: GPT-4.1 mini — US$ 0,40/1M input, US$ 1,60/1M output (dólar R$ 5,07).
+            Modelo: GPT-4.1 mini — {fmtUSD.format(0.4)}/1M input, {fmtUSD.format(1.6)}/1M output.
             Sem separação de input/output na linha, usa estimativa blended de{' '}
-            {fmtBRL.format(CUSTO_POR_MILHAO_BRL)}/1M — ajuste em <code>lib/config.ts</code>.
+            {fmtUSD.format(CUSTO_POR_MILHAO_USD)}/1M — ajuste em <code>lib/config.ts</code>.
           </p>
         </footer>
       </main>
