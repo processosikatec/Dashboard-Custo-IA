@@ -8,6 +8,7 @@ import {
   INPUT_POR_MILHAO_USD,
   OUTPUT_POR_MILHAO_USD,
   CACHED_INPUT_POR_MILHAO_USD,
+  EXCECAO_MODELO,
 } from '@/lib/config';
 import { SERIES_COLORS, C } from '@/lib/palette';
 import { TokenRecord, FluxoStat, SeriesPoint, Period, DateRange } from '@/lib/types';
@@ -33,10 +34,20 @@ function normalize(row: Record<string, unknown>): TokenRecord {
 /**
  * Custo exato quando input/output existem, descontando cache hit quando registrado
  * (cachedTokens é cobrado a 25% do preço normal de input); senão estimativa blended
- * sobre o total.
+ * sobre o total. Aplica preço de modelo diferente para a exceção pontual configurada
+ * (fluxo + dia específicos que rodaram em outro modelo).
  */
 function custoDe(r: TokenRecord): number {
+  const isExcecao =
+    r.fluxo === EXCECAO_MODELO.fluxo && new Date(r.created_at).toDateString() === EXCECAO_MODELO.data;
+
   if (r.inputTokens !== null && r.outputTokens !== null) {
+    if (isExcecao) {
+      return (
+        (r.inputTokens / 1_000_000) * EXCECAO_MODELO.inputPorMilhaoUSD +
+        (r.outputTokens / 1_000_000) * EXCECAO_MODELO.outputPorMilhaoUSD
+      );
+    }
     const cached = r.cachedTokens ?? 0;
     const inputNormal = Math.max(r.inputTokens - cached, 0);
     return (
