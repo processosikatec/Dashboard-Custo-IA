@@ -9,6 +9,7 @@ import {
   OUTPUT_POR_MILHAO_USD,
   CACHED_INPUT_POR_MILHAO_USD,
   EXCECAO_MODELO,
+  FLUXOS_EXCLUIDOS,
 } from '@/lib/config';
 import { SERIES_COLORS, C } from '@/lib/palette';
 import { TokenRecord, FluxoStat, SeriesPoint, Period, DateRange } from '@/lib/types';
@@ -170,7 +171,8 @@ export function useTokens() {
         if (data.length < PAGE_SIZE) break;
       }
 
-      setAllRecords(all.map(normalize));
+      const normalizados = all.map(normalize).filter((r) => !FLUXOS_EXCLUIDOS.includes(r.fluxo));
+      setAllRecords(normalizados);
       setLastUpdate(new Date());
       setError(null);
     } catch (err) {

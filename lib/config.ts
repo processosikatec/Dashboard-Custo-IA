@@ -13,6 +13,9 @@ export const CUSTO_POR_MILHAO_USD = 0.7;
 
 export const TABLE_NAME = 'tokens e suas origens - IA';
 
+// Fluxos que não devem contar em nada no painel (KPIs, gráficos, breakdown).
+export const FLUXOS_EXCLUIDOS = ['IA Qualidade v5 - IA CSAT'];
+
 // Exceção temporária: o fluxo "Sub-Fluxo - Tipo Mensagem" rodou em gpt-4o-mini
 // (não GPT-4.1 mini) só no dia de hoje — preço bem menor. Remover quando o n8n
 // voltar a usar o modelo padrão ou quando passarmos a registrar o modelo por linha.
