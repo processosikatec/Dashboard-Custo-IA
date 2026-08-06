@@ -16,12 +16,13 @@ export const TABLE_NAME = 'tokens e suas origens - IA';
 // Fluxos que não devem contar em nada no painel (KPIs, gráficos, breakdown).
 export const FLUXOS_EXCLUIDOS = ['IA Qualidade v5 - IA CSAT'];
 
-// Exceção temporária: o fluxo "Sub-Fluxo - Tipo Mensagem" rodou em gpt-4o-mini
-// (não GPT-4.1 mini) só no dia de hoje — preço bem menor. Remover quando o n8n
-// voltar a usar o modelo padrão ou quando passarmos a registrar o modelo por linha.
+// Exceção pontual: o fluxo "Sub-Fluxo - Tipo Mensagem" rodou em gpt-4o-mini
+// (não GPT-4.1 mini) só em 04/08/2026 — preço bem menor. Já corrigido no n8n;
+// data fixa (não "hoje") para que filtrar por esse dia no passado continue
+// aplicando o preço certo. Remover se passarmos a registrar o modelo por linha.
 export const EXCECAO_MODELO = {
   fluxo: 'Sub-Fluxo - Tipo Mensagem',
-  data: new Date().toDateString(), // hoje, no fuso local do servidor/browser
+  data: new Date(2026, 7, 4).toDateString(), // 04/08/2026 (mês 7 = agosto, 0-indexed)
   inputPorMilhaoUSD: 0.15,
   outputPorMilhaoUSD: 0.6,
 };
