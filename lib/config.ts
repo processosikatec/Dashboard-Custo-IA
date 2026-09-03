@@ -11,7 +11,7 @@ export const CACHED_INPUT_POR_MILHAO_USD = 0.1;
 // Blended a partir do mix assumido 75% input / 25% output.
 export const CUSTO_POR_MILHAO_USD = 0.7;
 
-export const TABLE_NAME = 'tokens e suas origens - IA';
+export const TABLE_NAME = 'tokens e suas origens';
 
 // Fluxos que não devem contar em nada no painel (KPIs, gráficos, breakdown).
 export const FLUXOS_EXCLUIDOS = ['IA Qualidade v5 - IA CSAT'];

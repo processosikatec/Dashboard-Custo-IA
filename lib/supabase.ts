@@ -1,7 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://lxgmimpevdgkyeycvdwf.supabase.co';
-const supabaseServiceRole = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx4Z21pbXBldmRna3lleWN2ZHdmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTE0OTI2MSwiZXhwIjoyMDc0NzI1MjYxfQ.wYVy6_2okNiIk95BIV575s9Loy64UdYGAgYMTkY2z4Q';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceRole = process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseServiceRole) {
+  throw new Error(
+    'Faltam NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY — configure em .env.local (local) e nas Environment Variables da Vercel (produção).',
+  );
+}
 
 export const supabase = createClient(supabaseUrl, supabaseServiceRole, {
   auth: { persistSession: false, autoRefreshToken: false },
