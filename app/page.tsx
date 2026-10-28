@@ -7,6 +7,7 @@ import { FluxoBreakdown } from '@/components/FluxoBreakdown';
 import { RecentsTable } from '@/components/RecentsTable';
 import { TopExecucoes } from '@/components/TopExecucoes';
 import { HoraDistribuicao } from '@/components/HoraDistribuicao';
+import { GastoDiario } from '@/components/GastoDiario';
 import { FiltroFluxo } from '@/components/FiltroFluxo';
 import { FiltroPeriodo } from '@/components/FiltroPeriodo';
 import { C } from '@/lib/palette';
@@ -60,6 +61,9 @@ export default function Dashboard() {
     seriesCompareRange,
     setSeriesCompareRange,
     projecaoMensal,
+    gastoDiario,
+    gastoDiarioDias,
+    setGastoDiarioDias,
     colorMap,
     loading,
     refreshing,
@@ -207,6 +211,9 @@ export default function Dashboard() {
             compareRange={seriesCompareRange}
             onCompareRange={setSeriesCompareRange}
           />
+
+          {/* Gasto diário — janela própria (7/14/30 dias), respeita o filtro de fluxo */}
+          <GastoDiario data={gastoDiario} colorMap={colorMap} dias={gastoDiarioDias} onDias={setGastoDiarioDias} />
 
           {/* Distribuição por horário + execuções mais caras */}
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
