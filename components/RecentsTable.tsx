@@ -19,9 +19,9 @@ export function RecentsTable({ records, colorMap }: RecentsTableProps) {
         Últimas execuções
       </h3>
       <div className="flex flex-col">
-        {records.slice(0, 9).map((r) => (
+        {records.slice(0, 9).map((r, i) => (
           <div
-            key={r.id}
+            key={`${r.id}-${i}`}
             className="flex items-center gap-3 py-2.5 border-b last:border-b-0"
             style={{ borderColor: C.grid }}
           >
