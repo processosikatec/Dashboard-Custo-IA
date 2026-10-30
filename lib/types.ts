@@ -31,6 +31,19 @@ export interface SeriesPoint {
   /** valor do mesmo ponto no período anterior, para overlay de comparação */
   tokensAnterior?: number;
   custoAnterior?: number;
+  execucoesAnterior?: number;
+  /** rótulo do bucket equivalente no intervalo de comparação (ex.: "27/10" ou "14h") */
+  labelAnterior?: string;
+}
+
+export interface GastoDiaPoint {
+  label: string;
+  /** Date.toDateString() do dia — chave estável */
+  data: string;
+  custo: number;
+  tokens: number;
+  execucoes: number;
+  fluxosCusto: Record<string, number>;
 }
 
 export type Period = 'hoje' | '7d' | '30d' | 'tudo' | 'custom';

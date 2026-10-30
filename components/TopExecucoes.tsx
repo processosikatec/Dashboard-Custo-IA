@@ -24,7 +24,7 @@ export function TopExecucoes({ execucoes, colorMap }: TopExecucoesProps) {
       <div className="flex flex-col">
         {execucoes.map((e, i) => (
           <div
-            key={e.id}
+            key={`${e.id}-${i}`}
             className="flex items-center gap-3 py-2 border-b last:border-b-0"
             style={{ borderColor: C.grid }}
           >

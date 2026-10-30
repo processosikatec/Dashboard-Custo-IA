@@ -31,24 +31,36 @@ function fmtValue(v: number, metric: Metric) {
   return metric === 'custo' ? fmtUSD.format(v) : `${fmtInt.format(v)} tokens`;
 }
 
+function fmtDelta(atual: number, anterior: number, metric: Metric) {
+  const diff = atual - anterior;
+  const sinal = diff > 0 ? '+' : diff < 0 ? '−' : '';
+  const abs = metric === 'custo' ? fmtUSD.format(Math.abs(diff)) : fmtInt.format(Math.abs(diff));
+  const pct = anterior > 0 ? ` (${sinal}${Math.abs((diff / anterior) * 100).toFixed(1)}%)` : '';
+  return { texto: `${sinal}${abs}${pct}`, cor: diff > 0 ? C.bad : diff < 0 ? C.good : C.inkMuted };
+}
+
 function ChartTooltip({
   active,
   payload,
   label,
   metric,
   fluxos,
+  compareLabel,
 }: {
   active?: boolean;
-  payload?: { dataKey: string; value: number; color: string }[];
+  payload?: { dataKey: string; value: number; color: string; payload: Record<string, string | number> }[];
   label?: string;
   metric: Metric;
   fluxos: string[];
+  compareLabel: string;
 }) {
   if (!active || !payload?.length) return null;
-  const total = payload
-    .filter((p) => fluxos.includes(p.dataKey))
-    .reduce((s, p) => s + (p.value || 0), 0);
-  const anterior = payload.find((p) => p.dataKey === 'anteriorValor');
+  // Total vem do ponto (todos os fluxos), não só das linhas visíveis — senão fluxos
+  // fora do top 6 sumiriam do total e a comparação com o período anterior ficaria torta.
+  const row = payload[0].payload;
+  const total = Number(row.total) || 0;
+  const anterior = row.anteriorValor !== undefined ? Number(row.anteriorValor) : null;
+  const delta = anterior !== null ? fmtDelta(total, anterior, metric) : null;
 
   return (
     <div
@@ -74,11 +86,22 @@ function ChartTooltip({
         <span style={{ color: C.inkMuted }}>Total</span>
         <span className="font-semibold">{fmtValue(total, metric)}</span>
       </div>
-      {anterior && (
-        <div className="flex items-center justify-between gap-4" style={{ color: C.inkMuted }}>
-          <span>Período anterior</span>
-          <span>{fmtValue(anterior.value || 0, metric)}</span>
-        </div>
+      {anterior !== null && delta && (
+        <>
+          <div className="flex items-center justify-between gap-4" style={{ color: C.inkMuted }}>
+            <span>
+              {compareLabel}
+              {row.labelAnterior ? ` (${row.labelAnterior})` : ''}
+            </span>
+            <span>{fmtValue(anterior, metric)}</span>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <span style={{ color: C.inkMuted }}>Diferença</span>
+            <span className="font-medium" style={{ color: delta.cor }}>
+              {delta.texto}
+            </span>
+          </div>
+        </>
       )}
     </div>
   );
@@ -100,7 +123,11 @@ export function TimeSeriesChart({
   // Expande cada ponto com uma chave por fluxo (em tokens ou em custo real) + o total do período anterior.
   const chartData = useMemo(() => {
     return data.map((p) => {
-      const row: Record<string, string | number> = { label: p.label };
+      const row: Record<string, string | number> = {
+        label: p.label,
+        total: metric === 'custo' ? p.custo : p.tokens,
+      };
+      if (p.labelAnterior) row.labelAnterior = p.labelAnterior;
       const porFluxo = metric === 'custo' ? p.fluxosCusto : p.fluxos;
       fluxos.forEach((f) => {
         row[f] = porFluxo[f] || 0;
@@ -113,7 +140,26 @@ export function TimeSeriesChart({
     });
   }, [data, fluxos, metric]);
 
-  const showLegend = fluxos.length >= 2;
+  const compareLabel = compareMode === 'ontem' ? 'Ontem' : 'Comparação';
+
+  // Resumo do intervalo inteiro: soma só os pontos que têm par na comparação, para
+  // comparar janelas equivalentes (ex.: hoje até 11h vs. ontem até 11h).
+  const resumo = useMemo(() => {
+    if (!compareEnabled) return null;
+    let atual = 0;
+    let anterior = 0;
+    let pares = 0;
+    data.forEach((p) => {
+      const ant = metric === 'custo' ? p.custoAnterior : p.tokensAnterior;
+      if (ant === undefined) return;
+      atual += metric === 'custo' ? p.custo : p.tokens;
+      anterior += ant;
+      pares += 1;
+    });
+    return pares > 0 ? { atual, anterior, delta: fmtDelta(atual, anterior, metric) } : null;
+  }, [compareEnabled, data, metric]);
+
+  const showLegend = fluxos.length >= 2 || compareEnabled;
   const visibleFluxos = fluxos.slice(0, 6);
   const overflowCount = fluxos.length - visibleFluxos.length;
 
@@ -149,6 +195,16 @@ export function TimeSeriesChart({
         </div>
       </div>
 
+      {resumo && (
+        <p className="text-[12px] -mt-2 mb-3" style={{ color: C.inkMuted }}>
+          Total {fmtValue(resumo.atual, metric)} vs. {compareLabel.toLowerCase()} {fmtValue(resumo.anterior, metric)} no
+          mesmo intervalo —{' '}
+          <span className="font-medium" style={{ color: resumo.delta.cor }}>
+            {resumo.delta.texto}
+          </span>
+        </p>
+      )}
+
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
           <CartesianGrid stroke={C.grid} strokeWidth={1} vertical={false} />
@@ -170,7 +226,7 @@ export function TimeSeriesChart({
             width={metric === 'custo' ? 64 : 48}
           />
           <Tooltip
-            content={<ChartTooltip metric={metric} fluxos={visibleFluxos} />}
+            content={<ChartTooltip metric={metric} fluxos={visibleFluxos} compareLabel={compareLabel} />}
             cursor={{ stroke: C.baseline, strokeWidth: 1 }}
           />
           {showLegend && (
@@ -180,16 +236,29 @@ export function TimeSeriesChart({
               iconSize={8}
             />
           )}
+          {/* Na comparação, total contra total: a linha tracejada é a soma de todos os
+              fluxos no intervalo anterior, então o par certo é o total atual, não cada fluxo. */}
+          {compareEnabled && (
+            <Line
+              type="monotone"
+              dataKey="total"
+              name="Total"
+              stroke={C.inkPrimary}
+              strokeWidth={2.5}
+              dot={false}
+              activeDot={{ r: 4, strokeWidth: 2, stroke: C.surface }}
+            />
+          )}
           {compareEnabled && (
             <Line
               type="monotone"
               dataKey="anteriorValor"
-              name="Período anterior"
+              name={`Total ${compareLabel.toLowerCase()}`}
               stroke={C.inkMuted}
-              strokeWidth={1.5}
-              strokeDasharray="4 4"
+              strokeWidth={2}
+              strokeDasharray="5 4"
               dot={false}
-              legendType="none"
+              activeDot={{ r: 3, strokeWidth: 0, fill: C.inkMuted }}
             />
           )}
           {visibleFluxos.map((f) => (
@@ -199,7 +268,8 @@ export function TimeSeriesChart({
               dataKey={f}
               name={f}
               stroke={colorMap.get(f) || C.accent}
-              strokeWidth={2}
+              strokeWidth={compareEnabled ? 1.25 : 2}
+              strokeOpacity={compareEnabled ? 0.45 : 1}
               dot={false}
               activeDot={{ r: 4, strokeWidth: 2, stroke: C.surface }}
             />

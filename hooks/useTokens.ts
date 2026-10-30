@@ -12,7 +12,7 @@ import {
   FLUXOS_EXCLUIDOS,
 } from '@/lib/config';
 import { SERIES_COLORS, C } from '@/lib/palette';
-import { TokenRecord, FluxoStat, SeriesPoint, Period, DateRange } from '@/lib/types';
+import { TokenRecord, FluxoStat, SeriesPoint, Period, DateRange, GastoDiaPoint } from '@/lib/types';
 import { CompareMode } from '@/components/CompareControls';
 
 const OUTROS = 'Outros';
@@ -151,6 +151,9 @@ export function useTokens() {
   const [horaCompareMode, setHoraCompareMode] = useState<CompareMode>('off');
   const [horaCompareRange, setHoraCompareRange] = useState<DateRange | null>(null);
 
+  // Janela do gráfico de gasto por dia — independente do filtro de período.
+  const [gastoDiarioDias, setGastoDiarioDias] = useState<number>(30);
+
   const fetchTokens = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -171,7 +174,13 @@ export function useTokens() {
         if (data.length < PAGE_SIZE) break;
       }
 
-      const normalizados = all.map(normalize).filter((r) => !FLUXOS_EXCLUIDOS.includes(r.fluxo));
+      // Linhas sem created_at válido (ex.: registros incompletos que chegam com fluxo
+      // "Desconhecido") não têm como entrar em nenhum bucket de tempo — e new Date('')
+      // derruba toISOString() com RangeError. Descarta na origem.
+      const normalizados = all
+        .map(normalize)
+        .filter((r) => Number.isFinite(+new Date(r.created_at)))
+        .filter((r) => !FLUXOS_EXCLUIDOS.includes(r.fluxo));
       setAllRecords(normalizados);
       setLastUpdate(new Date());
       setError(null);
@@ -351,23 +360,30 @@ export function useTokens() {
       const prevBuckets = buildBuckets(seriesCompareRangeResolved);
       const prevTokenTotals = new Array(prevBuckets.length).fill(0);
       const prevCustoTotals = new Array(prevBuckets.length).fill(0);
+      const prevExecucoes = new Array(prevBuckets.length).fill(0);
       const prevIdx = new Map(prevBuckets.map((b, i) => [b.key, i]));
+      const { start, end } = seriesCompareRangeResolved;
 
       byFluxo.forEach((r) => {
         const t = +new Date(r.created_at);
-        if (t < seriesCompareRangeResolved.start.getTime() || t > seriesCompareRangeResolved.end.getTime()) return;
-        const key = bucketKeyFor(new Date(r.created_at), prevGranularity);
+        if (!(t >= start.getTime() && t <= end.getTime())) return;
+        const key = bucketKeyFor(new Date(t), prevGranularity);
         const i = prevIdx.get(key);
         if (i !== undefined) {
           prevTokenTotals[i] += r.tokens;
           prevCustoTotals[i] += custoDe(r);
+          prevExecucoes[i] += 1;
         }
       });
 
+      // Alinha ponto a ponto (mesma hora de ontem / mesmo dia deslocado). Pontos sem
+      // par no intervalo de comparação ficam sem valor em vez de virar 0 falso.
       points.forEach((p, i) => {
         if (i < prevTokenTotals.length) {
           p.tokensAnterior = prevTokenTotals[i];
           p.custoAnterior = prevCustoTotals[i];
+          p.execucoesAnterior = prevExecucoes[i];
+          p.labelAnterior = prevBuckets[i].label;
         }
       });
     }
@@ -434,6 +450,39 @@ export function useTokens() {
     return buckets.map((tokens, hora) => ({ hora, tokens, tokensComparacao: compareBuckets[hora] }));
   }, [records, byFluxo, horaCompareRangeResolved]);
 
+  // Gasto por dia nos últimos N dias (sobre os fluxos selecionados), com breakdown
+  // por fluxo para empilhar as barras. Dias sem execução aparecem zerados.
+  const gastoDiario: GastoDiaPoint[] = useMemo(() => {
+    const start = startOfDay(new Date());
+    start.setDate(start.getDate() - (gastoDiarioDias - 1));
+    const points: GastoDiaPoint[] = [];
+    for (let d = new Date(start); points.length < gastoDiarioDias; d.setDate(d.getDate() + 1)) {
+      points.push({
+        label: bucketLabel(d, 'day'),
+        data: d.toDateString(),
+        custo: 0,
+        tokens: 0,
+        execucoes: 0,
+        fluxosCusto: {},
+      });
+    }
+    const idx = new Map(points.map((p, i) => [p.data, i]));
+
+    byFluxo.forEach((r) => {
+      const d = new Date(r.created_at);
+      if (d < start) return;
+      const i = idx.get(d.toDateString());
+      if (i === undefined) return;
+      const c = custoDe(r);
+      const fluxoKey = displayFluxo(r.fluxo);
+      points[i].custo += c;
+      points[i].tokens += r.tokens;
+      points[i].execucoes += 1;
+      points[i].fluxosCusto[fluxoKey] = (points[i].fluxosCusto[fluxoKey] || 0) + c;
+    });
+    return points;
+  }, [byFluxo, gastoDiarioDias, displayFluxo]);
+
   // Projeção de gasto do mês corrente com base no ritmo médio diário observado.
   const projecaoMensal = useMemo(() => {
     const now = new Date();
@@ -471,6 +520,9 @@ export function useTokens() {
     seriesCompareRange,
     setSeriesCompareRange,
     projecaoMensal,
+    gastoDiario,
+    gastoDiarioDias,
+    setGastoDiarioDias,
     colorMap,
     loading,
     refreshing,
